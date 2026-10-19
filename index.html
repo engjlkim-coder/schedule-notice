@@ -1,0 +1,1509 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>기술국 근무표</title>
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="근무표">
+<meta name="theme-color" content="#2f6f5e">
+<link rel="manifest" href="manifest.json">
+<style>
+  :root{
+    --bg:#f3f4f1; --card:#ffffff; --border:#e5e7e2; --border-strong:#c3c7bd;
+    --text:#181a17; --text-2:#52564e; --text-3:#8a8d84;
+    --accent:#245c4c; --accent-bg:#e1efe9;
+    --gray:#e9e9e4; --danger:#a8412a;
+    --shadow-sm:0 1px 2px rgba(20,24,18,0.05), 0 1px 1px rgba(20,24,18,0.04);
+    --shadow-md:0 2px 8px rgba(20,24,18,0.07), 0 1px 2px rgba(20,24,18,0.05);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    padding-bottom:calc(70px + env(safe-area-inset-bottom));
+    -webkit-font-smoothing:antialiased;}
+  header{padding:22px 16px 18px;}
+  header h1{font-size:21px;font-weight:800;margin:0;letter-spacing:-0.02em;}
+  .title-accent{display:block;width:34px;height:4px;border-radius:999px;margin-top:9px;
+    background:linear-gradient(90deg,var(--accent),#5a9c86);}
+  main{max-width:480px;margin:0 auto;padding:0 16px;}
+  .tabpage{display:none;}
+  .tabpage.active{display:block;animation:fadein .18s ease;}
+  @keyframes fadein{from{opacity:0;transform:translateY(2px);}to{opacity:1;transform:none;}}
+
+  .row{display:flex;gap:8px;align-items:center;margin:10px 0;}
+  select,input[type=date],input[type=number]{
+    width:100%;padding:10px 12px;border-radius:11px;border:1px solid var(--border-strong);
+    background:var(--card);font-size:15px;color:var(--text);box-shadow:var(--shadow-sm);
+  }
+  select:focus,input:focus{outline:2px solid var(--accent);outline-offset:1px;}
+  .row select,.row input[type=date],.row input[type=number]{flex:1;min-width:0;width:0;}
+  #lookupDate{flex:1 1 160px;min-width:120px;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;
+    padding:14px 16px;margin:10px 0;box-shadow:var(--shadow-sm);}
+  .card h3{margin:0 0 8px;font-size:13px;font-weight:700;color:var(--text-2);
+    text-transform:uppercase;letter-spacing:0.04em;}
+  #tab-date .card{padding:10px 16px;margin:6px 0;}
+  .badgeday{display:flex;align-items:baseline;gap:8px;margin-bottom:2px;}
+  .badgeday .num{font-size:20px;font-weight:800;letter-spacing:-0.02em;}
+  .badgeday .wd{font-size:12px;color:var(--text-2);font-weight:500;}
+  .tag{display:inline-block;font-size:10.5px;font-weight:600;padding:3px 9px;border-radius:999px;
+    background:var(--accent-bg);color:var(--accent);margin-left:4px;letter-spacing:0.01em;}
+  .tag.off{background:#f4e2dc;color:var(--danger);}
+
+  .grouplabel{font-size:10.5px;font-weight:700;color:var(--text-3);margin:var(--gl-mt,10px) 0 3px;
+    text-transform:uppercase;letter-spacing:0.06em;}
+  .person-row{display:flex;justify-content:space-between;align-items:center;
+    padding:var(--pr-pad,7px) 0;border-bottom:1px solid var(--border);}
+  .person-row:last-child{border-bottom:none;}
+  .person-row .name{font-size:13.5px;font-weight:500;}
+  .code{font-size:12.5px;font-weight:700;padding:3px 10px;border-radius:8px;min-width:40px;
+    text-align:center;letter-spacing:0.01em;border:1px solid transparent;}
+  .code.AD{background:#dcebf7;color:#164d78;border-color:#c3ddf0;}
+  .code.DP{background:#d9f0e6;color:#155e42;border-color:#bfe4d3;}
+  .code.ADP{background:#e6e2f7;color:#3d2e78;border-color:#cfc5ef;}
+  .code.R{background:#faecd2;color:#7a4e0f;border-color:#f2dcac;}
+  .code.D{background:#eae7de;color:#6b6656;border-color:#dcd7c9;}
+  .code.M{background:#f5ded1;color:#7a3c1c;border-color:#eccab5;}
+  .code.N{background:#e7e0f5;color:#432e7a;border-color:#d6c9ee;}
+  .code.DN{background:#f5d9e6;color:#7a2650;border-color:#eec2da;}
+  .code.dash{background:transparent;color:var(--text-3);border-color:transparent;}
+  .code.blank{background:transparent;color:var(--text-3);border-color:transparent;}
+  select.editselect{flex:0 0 auto;width:auto;padding:5px 8px;font-size:13px;border-radius:8px;
+    border:1px solid var(--border-strong);background:var(--card);color:var(--text);}
+
+  .weekday-header{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:10px;}
+  .weekday-header span{text-align:center;font-size:11.5px;font-weight:700;color:var(--text-3);}
+  .weekday-header span:first-child{color:var(--danger);}
+  .weekday-header span:last-child{color:#20527d;}
+
+  .daystrip{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:58px;gap:6px;margin-top:6px;}
+  .daycell{border-radius:10px;padding:6px 2px;text-align:center;background:var(--card);
+    border:1px solid var(--border);height:100%;overflow:hidden;box-sizing:border-box;
+    transition:box-shadow .15s;}
+  .daycell.empty{background:transparent;border:none;}
+  .daycell .d{font-size:10px;color:var(--text-3);font-weight:600;}
+  .daycell .c{font-size:13px;font-weight:700;margin-top:2px;}
+  .daycell .bw{font-size:8px;color:var(--accent);margin-top:1px;line-height:1.1;font-weight:600;}
+  .daycell.weekend{background:var(--gray);}
+  .daycell.weekend .d{color:var(--danger);font-weight:800;}
+  .daycell.today{outline:2px solid var(--accent);box-shadow:var(--shadow-md);}
+
+  .monthbar{display:flex;align-items:center;gap:8px;margin:10px 0;}
+  .monthnav{flex:1;display:flex;align-items:center;justify-content:center;gap:26px;min-width:0;}
+  .monthbar .iconbtn{flex:0 0 auto;width:40px;height:40px;border-radius:11px;border:1px solid var(--border-strong);
+    background:var(--card);font-size:18px;color:var(--text-2);box-shadow:var(--shadow-sm);
+    transition:transform .1s;}
+  .monthbar .iconbtn:active{transform:scale(0.92);}
+  .monthbar .label{flex:0 1 auto;text-align:center;font-weight:700;font-size:16px;letter-spacing:-0.01em;
+    white-space:nowrap;}
+  .todaybtn{flex:0 0 auto;padding:10px 14px;border-radius:11px;border:1px solid var(--border-strong);
+    background:var(--card);font-size:14px;font-weight:600;color:var(--accent);font-family:inherit;
+    box-shadow:var(--shadow-sm);transition:transform .1s;}
+  .todaybtn:active{transform:scale(0.96);}
+
+  .chip-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+  .chip{font-size:12px;font-weight:500;padding:5px 10px;border-radius:999px;border:1px solid var(--border-strong);
+    background:var(--card);display:flex;align-items:center;gap:6px;box-shadow:var(--shadow-sm);}
+  .chip button{border:none;background:none;color:var(--danger);font-size:13px;cursor:pointer;padding:0;}
+
+  .toggle-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;
+    border-bottom:1px solid var(--border);}
+  .toggle-row:last-child{border-bottom:none;}
+  .toggle-row > div > div:first-child{font-weight:600;}
+  .switch{position:relative;width:44px;height:26px;flex-shrink:0;}
+  .switch input{opacity:0;width:0;height:0;}
+  .slider{position:absolute;inset:0;background:var(--border-strong);border-radius:999px;
+    transition:.15s;cursor:pointer;}
+  .slider:before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;
+    background:white;border-radius:50%;transition:.15s;box-shadow:0 1px 2px rgba(0,0,0,0.2);}
+  input:checked + .slider{background:var(--accent);}
+  input:checked + .slider:before{transform:translateX(18px);}
+
+  button.primary{width:100%;padding:11px;border-radius:11px;border:none;
+    background:var(--accent);color:white;font-size:14px;font-weight:700;margin-top:6px;
+    box-shadow:var(--shadow-sm);transition:transform .1s;}
+  button.primary:active{transform:scale(0.98);}
+  .muted{font-size:12px;color:var(--text-3);margin-top:6px;line-height:1.5;}
+
+  nav.tabs{position:fixed;bottom:0;left:0;right:0;
+    background:linear-gradient(180deg,#232c39,#1b222c);
+    border-top:none;border-radius:22px 22px 0 0;
+    display:flex;max-width:480px;margin:0 auto;gap:6px;
+    padding:6px 8px calc(6px + env(safe-area-inset-bottom));
+    box-shadow:0 -4px 16px rgba(0,0,0,0.18);}
+  nav.tabs button{flex:1;padding:7px 4px 6px;background:none;border:none;border-radius:16px;
+    font-size:11.5px;font-weight:600;color:#8f9bab;transition:background .15s,color .15s;}
+  nav.tabs button.active{background:#3a4658;color:#ffffff;font-weight:700;}
+  nav.tabs .ic{display:block;font-size:18px;margin-bottom:2px;}
+
+  /* ===== 공지 / 알림 ===== */
+  input[type=text],input[type=password],input[type=time],textarea{
+    width:100%;padding:10px 12px;border-radius:11px;border:1px solid var(--border-strong);
+    background:var(--card);font-size:15px;color:var(--text);box-shadow:var(--shadow-sm);
+    font-family:inherit;margin-top:8px;
+  }
+  textarea{resize:vertical;min-height:90px;line-height:1.5;}
+  textarea:focus,input[type=text]:focus,input[type=password]:focus,input[type=time]:focus{
+    outline:2px solid var(--accent);outline-offset:1px;}
+  .row input[type=time]{flex:1;min-width:0;width:0;margin-top:0;}
+  .pick-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+  .pick{font-size:13px;font-weight:600;padding:6px 12px;border-radius:999px;border:1px solid var(--border-strong);
+    background:var(--card);color:var(--text-2);cursor:pointer;user-select:none;}
+  .pick.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .pick-tools{display:flex;gap:8px;margin-top:8px;}
+  .pick-tools button{font-size:12px;font-weight:600;padding:5px 10px;border-radius:8px;
+    border:1px solid var(--border-strong);background:var(--card);color:var(--accent);}
+  .notice-card.mine{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),var(--shadow-sm);}
+  .notice-head{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px;}
+  .notice-when{font-size:13px;font-weight:700;color:var(--text-2);}
+  .notice-title{font-size:15px;font-weight:700;margin-bottom:3px;}
+  .notice-msg{font-size:14px;line-height:1.55;white-space:pre-wrap;word-break:break-word;}
+  .notice-meta{font-size:11.5px;color:var(--text-3);margin-top:8px;line-height:1.5;}
+  .notice-targets{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;}
+  .notice-targets span{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--gray);color:var(--text-2);}
+  .notice-del{border:none;background:none;color:var(--danger);font-size:12px;font-weight:600;padding:0;margin-left:auto;cursor:pointer;}
+  .tag.sent{background:#e6e2f7;color:#3d2e78;}
+
+  /* ===== 인쇄 / PDF 출력 전용 레이아웃 (화면에는 안 보이고 인쇄 시에만 나타남) ===== */
+  #printArea{display:none;}
+  @media print{
+    html,body{height:100%;}
+    body > *:not(#printArea){display:none !important;}
+    #printArea{display:flex !important;flex-direction:column;justify-content:center;height:100%;}
+    @page{size:A4 landscape;margin:8mm;}
+    /* 크롬은 인쇄 시 "배경 그래픽" 옵션을 켜지 않으면 배경색을 생략함 - 항상 인쇄되도록 강제 */
+    #printArea, #printArea *{
+      -webkit-print-color-adjust:exact !important;
+      print-color-adjust:exact !important;
+      color-adjust:exact !important;
+    }
+  }
+  #printArea{font-family:"Malgun Gothic","맑은 고딕","Apple SD Gothic Neo","Noto Sans KR",sans-serif;}
+  .print-header{position:relative;margin-bottom:8px;flex:0 0 auto;min-height:30mm;}
+  .print-header h1{position:absolute;left:50%;top:4px;transform:translateX(-50%);
+    font-size:17pt;margin:0;font-family:inherit;font-weight:700;white-space:nowrap;
+    padding-bottom:5px;border-bottom:2px solid #333;}
+  .approval-box{position:absolute;top:0;right:0;border-collapse:collapse;font-size:9pt;table-layout:fixed;
+    border:2px solid #333;}
+  .approval-box td{border:1px solid #000;padding:2px 6px;text-align:center;vertical-align:middle;height:10mm;}
+  .approval-box td.stampcell{padding:0;}
+  table.print-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10pt;
+    border:2px solid #333;}
+  table.print-table th,table.print-table td{border:1px solid #999;text-align:center;padding:3px 0;
+    font-family:inherit;}
+  table.print-table th{background:#a8a8a8;font-weight:700;}
+  table.print-table th.sun{color:#a8412a;}
+  table.print-table th.sat{color:#20527d;}
+  table.print-table td.wk,table.print-table th.wk{background:#a8a8a8;}
+  table.print-table td.namecell{white-space:nowrap;text-align:center;font-weight:700;}
+  table.print-table td.grouplabelcell{text-align:center;font-weight:800;word-break:break-all;
+    background:#a8a8a8;padding:3px 1px;}
+  table.print-table tr.highlightrow td{border-top:2px solid #d21f1f;border-bottom:2px solid #d21f1f;}
+  table.print-table tr.highlightrow td:first-child{border-left:2px solid #d21f1f;}
+  table.print-table tr.highlightrow td:last-child{border-right:2px solid #d21f1f;}
+  table.print-table th.cornercell{position:relative;padding:0;}
+  th.cornercell .corner-diag{position:absolute;inset:0;width:100%;height:100%;overflow:visible;}
+  th.cornercell .corner-top{position:absolute;top:2px;right:6px;font-size:9.5pt;font-weight:700;}
+  th.cornercell .corner-bottom{position:absolute;bottom:2px;left:6px;font-size:9.5pt;font-weight:700;}
+  .print-legend{margin-top:10px;font-size:9pt;line-height:1.7;flex:0 0 auto;
+    border:1px solid #333;border-radius:3px;padding:8px 12px;}
+  .print-legend p{margin:2px 0;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>기술국 근무표</h1>
+  <span class="title-accent"></span>
+</header>
+
+<main>
+
+  <!-- 날짜로 확인 -->
+  <div class="tabpage active" id="tab-date">
+    <div class="row">
+      <input type="date" id="lookupDate">
+      <button class="todaybtn" id="todayBtnDate" onclick="goToToday()">오늘</button>
+      <button class="primary" id="editSaveBtn" style="width:auto;padding:9px 14px;margin:0;flex:0 0 auto;" onclick="toggleEditSave()">수정</button>
+    </div>
+    <div id="dateResult"></div>
+  </div>
+
+  <!-- 월간 보기 -->
+  <div class="tabpage" id="tab-month">
+    <div class="monthbar">
+      <div class="monthnav">
+        <button class="iconbtn" onclick="shiftMonth(-1)" aria-label="이전 달">&#8249;</button>
+        <div class="label" id="monthLabel"></div>
+        <button class="iconbtn" onclick="shiftMonth(1)" aria-label="다음 달">&#8250;</button>
+      </div>
+      <button class="todaybtn" onclick="goToday()">오늘</button>
+    </div>
+    <div class="row" style="margin-top:0;">
+      <select id="personSelect"></select>
+    </div>
+    <div class="card">
+      <div class="weekday-header">
+        <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+      </div>
+      <div class="daystrip" id="monthStrip"></div>
+    </div>
+  </div>
+
+  <!-- 공지 -->
+  <div class="tabpage" id="tab-notice">
+    <div class="row">
+      <button class="primary" id="noticeNewBtn" style="margin:0;" onclick="toggleNoticeForm()">＋ 새 공지 작성</button>
+      <button class="todaybtn" style="flex:0 0 auto;" onclick="loadNotices()">새로고침</button>
+    </div>
+
+    <div class="card" id="noticeForm" style="display:none;">
+      <h3>새 공지</h3>
+      <div class="row" style="margin-top:0;">
+        <input type="date" id="nfDate">
+        <input type="time" id="nfTime" value="08:00">
+      </div>
+      <div class="muted" style="margin-top:2px;">이 날짜·시각에 알림이 발송됩니다. (최대 5~15분 정도 늦을 수 있어요)</div>
+
+      <div class="grouplabel">알림 받을 근무자</div>
+      <div class="pick-list" id="nfTargets"></div>
+      <div class="pick-tools">
+        <button type="button" onclick="pickAllTargets(true)">전체 선택</button>
+        <button type="button" onclick="pickAllTargets(false)">전체 해제</button>
+      </div>
+
+      <input type="text" id="nfTitle" placeholder="제목 (선택)" maxlength="40">
+      <textarea id="nfMessage" placeholder="공지 내용" maxlength="300"></textarea>
+
+      <div id="nfPinWrap">
+        <input type="password" id="nfPin" placeholder="작성 비밀번호 (이 기기에서 처음 한 번만)" autocomplete="off">
+      </div>
+      <button class="primary" id="nfSubmitBtn" onclick="submitNotice()">공지 올리기</button>
+      <div class="muted" id="nfStatus"></div>
+    </div>
+
+    <div id="noticeList"></div>
+  </div>
+
+  <!-- 설정 -->
+  <div class="tabpage" id="tab-settings">
+    <div class="card">
+      <h3>기본으로 볼 근무자</h3>
+      <select id="favoritePersonSelect"></select>
+      <div class="muted">여기서 지정하면 월간 보기를 열 때마다 이 근무자의 근무표가 기본으로 표시됩니다.</div>
+    </div>
+
+    <div class="card">
+      <h3>공지 알림 받기</h3>
+      <select id="pushNameSelect"></select>
+      <div class="muted" id="pushStatus"></div>
+      <button class="primary" id="pushEnableBtn" onclick="enablePush()">🔔 이 기기에서 알림 켜기</button>
+      <button class="todaybtn" style="width:100%;padding:11px;margin-top:8px;" onclick="disablePush()">알림 끄기</button>
+      <button class="todaybtn" style="width:100%;padding:11px;margin-top:8px;" onclick="testLocalNotification()">이 기기에서 알림 표시 테스트</button>
+      <div class="muted">아이폰은 iOS 16.4 이상에서, Safari의 공유 버튼 → "홈 화면에 추가"로 설치한 앱에서만 알림을 켤 수 있습니다.</div>
+    </div>
+
+    <div class="card">
+      <h3>이 달 설정</h3>
+      <div class="row">
+        <select id="settingsYearInput"></select>
+        <select id="settingsMonthNumSelect"></select>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div style="font-size:14px;">주말 근무 (뉴스/송출)</div>
+          <div class="muted" style="margin:2px 0 0;">켜면 토요일 전원 휴무, 일요일엔 DP 순번자만 근무</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="weekendNewsToggle"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div style="font-size:14px;">격주 금요일 휴무 표시</div>
+          <div class="muted" style="margin:2px 0 0;">2·4번째 금요일을 뉴스/송출팀 휴무로 표시</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="biweeklyToggle"><span class="slider"></span></label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>지정 휴일 추가</h3>
+      <div class="row">
+        <input type="date" id="localHolidayDate">
+        <button class="todaybtn" style="flex:0 0 auto;padding:9px 14px;" onclick="clearHolidayDate()">취소</button>
+        <button class="primary" style="width:auto;padding:9px 14px;margin:0;flex:0 0 auto;" onclick="addLocalHoliday()">추가</button>
+      </div>
+      <div class="chip-list" id="localHolidayChips"></div>
+      <div class="muted">법정 공휴일은 별도 설정 없이 자동으로 반영됩니다.</div>
+    </div>
+
+    <div class="card">
+      <h3>설정값 내보내기 / 불러오기</h3>
+      <div class="muted" style="margin-top:0;">기본 근무자, 이 달 설정(공휴일 등), 날짜별 수정 내용을 파일로 저장해두면, 나중에 데이터가 지워져도 이 파일로 복구할 수 있습니다.</div>
+      <button class="primary" onclick="exportSettings()">⬇️ 설정값 내보내기 (파일로 저장)</button>
+      <button class="todaybtn" style="width:100%;padding:11px;margin-top:8px;" onclick="document.getElementById('importFileInput').click()">⬆️ 파일에서 불러오기</button>
+      <input type="file" id="importFileInput" accept="application/json,.json" style="display:none;" onchange="importSettings(event)">
+      <div class="muted" id="importStatus"></div>
+    </div>
+
+    <div class="card">
+      <h3>인쇄 / PDF 출력</h3>
+      <div class="muted" style="margin-top:0;">위 "이 달 설정"에서 고른 연/월과 그 설정(공휴일·주말 근무·격주 금요일)을 그대로 반영해서, 원본과 같은 표 형식으로 출력합니다.</div>
+      <div class="toggle-row">
+        <div>
+          <div>기본 근무자 강조 표시</div>
+          <div class="muted" style="margin:2px 0 0;">설정에서 지정한 기본 근무자 행에 빨간 테두리 표시</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="printHighlightToggle" checked><span class="slider"></span></label>
+      </div>
+      <button class="primary" onclick="printSchedule()">🖨 인쇄 / PDF로 저장</button>
+      <div class="muted">인쇄 대화상자가 뜨면 프린터 대신 "PDF로 저장"을 선택해서 파일로 저장할 수도 있습니다.</div>
+    </div>
+  </div>
+
+</main>
+
+<nav class="tabs">
+  <button data-tab="tab-date" class="active" onclick="switchTab('tab-date')"><span class="ic">&#128197;</span>일간 보기</button>
+  <button data-tab="tab-month" onclick="switchTab('tab-month')"><span class="ic">&#128203;</span>월간 보기</button>
+  <button data-tab="tab-notice" onclick="switchTab('tab-notice')"><span class="ic">&#128226;</span>공지</button>
+  <button data-tab="tab-settings" onclick="switchTab('tab-settings')"><span class="ic">&#9881;</span>설정</button>
+</nav>
+
+<div id="printArea"></div>
+
+<script>
+/* ===================== 서비스 워커 등록 + 적극적 업데이트 확인 ===================== */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').then((reg) => {
+      // 브라우저가 알아서 확인해줄 때까지 기다리지 않고, 열릴 때마다 직접 새 버전이 있는지 확인
+      reg.update().catch(() => {}); // 오프라인 등으로 확인이 실패해도 조용히 무시 (앱 사용엔 지장 없음)
+      // 백그라운드에 있다가 다시 화면으로 돌아올 때도 확인 (폰에서 "닫았다 열기"의 실제 동작 방식 보완)
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') reg.update();
+      });
+    }).catch(() => {
+      // 서비스 워커 파일이 없거나(sw.js 미업로드) 등록 실패해도 앱 자체 기능에는 영향 없음
+    });
+
+    // 새 서비스 워커가 활성화되어 컨트롤이 바뀌면, 화면을 한 번 새로고침해서 즉시 반영
+    let refreshingAfterUpdate = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (refreshingAfterUpdate) return;
+      refreshingAfterUpdate = true;
+      window.location.reload();
+    });
+  });
+}
+
+/* ===================== 홈 화면 실행 모드에서 뒤로가기 = 앱 종료 ===================== */
+(function setupBackToExit() {
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true;
+  if (!isStandalone) return; // 일반 브라우저 탭에서는 평소처럼 동작
+
+  history.pushState({ appRoot: true }, '', location.href);
+  window.addEventListener('popstate', function () {
+    // 히스토리가 이 앱 하나뿐인 상태(홈 화면 실행)에서 뒤로가기 시 탭 종료 시도
+    window.close();
+    // 일부 환경에서 close()가 막히는 경우, 빈 화면으로 빠지지 않도록 상태를 다시 채워둠
+    history.pushState({ appRoot: true }, '', location.href);
+  });
+})();
+
+/* ===================== 근무 로테이션 로직 (기존 VBA 매크로를 그대로 이식) ===================== */
+const REF_DATE = new Date(2017, 6, 1); // 기준일 2017-07-01 (절대 변경 금지)
+
+const GROUP_NAMES = {
+  songchul: ["이석용", "성백인", "황인조"],
+  news: ["김영훈", "안경재", "김정림", "신성원"],
+  md: ["남궁옥", "박미숙", "홍수영"],
+};
+
+const WEEKDAY_KR = ["일", "월", "화", "수", "목", "금", "토"]; // Date.getDay() 인덱스
+
+const KR_HOLIDAYS = {"2024-01-01": "신정연휴", "2024-02-10": "설날", "2024-02-09": "설날 전날", "2024-02-11": "설날 다음날", "2024-03-01": "삼일절", "2024-05-15": "부처님오신날", "2024-05-05": "어린이날", "2024-06-06": "현충일", "2024-08-15": "광복절", "2024-10-03": "개천절", "2024-10-09": "한글날", "2024-09-17": "추석", "2024-09-16": "추석 전날", "2024-09-18": "추석 다음날", "2024-12-25": "기독탄신일", "2024-04-10": "국회의원 선거일", "2024-02-12": "설날 대체 휴일", "2024-05-06": "어린이날 대체 휴일", "2024-10-01": "국군의 날", "2025-01-01": "신정연휴", "2025-01-29": "설날", "2025-01-28": "설날 전날", "2025-01-30": "설날 다음날", "2025-03-01": "삼일절", "2025-05-05": "부처님오신날; 어린이날", "2025-06-06": "현충일", "2025-08-15": "광복절", "2025-10-03": "개천절", "2025-10-09": "한글날", "2025-10-06": "추석", "2025-10-05": "추석 전날", "2025-10-07": "추석 다음날", "2025-12-25": "기독탄신일", "2025-03-03": "삼일절 대체 휴일", "2025-05-06": "부처님오신날 대체 휴일; 어린이날 대체 휴일", "2025-10-08": "추석 대체 휴일", "2025-01-27": "임시공휴일", "2025-06-03": "대통령 선거일", "2026-01-01": "신정연휴", "2026-02-17": "설날", "2026-02-16": "설날 전날", "2026-02-18": "설날 다음날", "2026-03-01": "삼일절", "2026-05-24": "부처님오신날", "2026-05-01": "노동절", "2026-05-05": "어린이날", "2026-06-06": "현충일", "2026-07-17": "제헌절", "2026-08-15": "광복절", "2026-10-03": "개천절", "2026-10-09": "한글날", "2026-09-25": "추석", "2026-09-24": "추석 전날", "2026-09-26": "추석 다음날", "2026-12-25": "기독탄신일", "2026-06-03": "지방선거일", "2026-03-02": "삼일절 대체 휴일", "2026-05-25": "부처님오신날 대체 휴일", "2026-08-17": "광복절 대체 휴일", "2026-10-05": "개천절 대체 휴일", "2027-01-01": "신정연휴", "2027-02-07": "설날", "2027-02-06": "설날 전날", "2027-02-08": "설날 다음날", "2027-03-01": "삼일절", "2027-05-13": "부처님오신날", "2027-05-01": "노동절", "2027-05-05": "어린이날", "2027-06-06": "현충일", "2027-07-17": "제헌절", "2027-08-15": "광복절", "2027-10-03": "개천절", "2027-10-09": "한글날", "2027-09-15": "추석", "2027-09-14": "추석 전날", "2027-09-16": "추석 다음날", "2027-12-25": "기독탄신일", "2027-02-09": "설날 대체 휴일", "2027-05-03": "노동절 대체 휴일", "2027-07-19": "제헌절 대체 휴일", "2027-08-16": "광복절 대체 휴일", "2027-10-04": "개천절 대체 휴일", "2027-10-11": "한글날 대체 휴일", "2027-12-27": "기독탄신일 대체 휴일", "2028-01-01": "신정연휴", "2028-01-27": "설날", "2028-01-26": "설날 전날", "2028-01-28": "설날 다음날", "2028-03-01": "삼일절", "2028-05-02": "부처님오신날", "2028-05-01": "노동절", "2028-05-05": "어린이날", "2028-06-06": "현충일", "2028-07-17": "제헌절", "2028-08-15": "광복절", "2028-10-03": "개천절; 추석", "2028-10-09": "한글날", "2028-10-02": "추석 전날", "2028-10-04": "추석 다음날", "2028-12-25": "기독탄신일", "2028-04-12": "국회의원 선거일", "2028-10-05": "추석 대체 휴일", "2029-01-01": "신정연휴", "2029-02-13": "설날", "2029-02-12": "설날 전날", "2029-02-14": "설날 다음날", "2029-03-01": "삼일절", "2029-05-20": "부처님오신날", "2029-05-01": "노동절", "2029-05-05": "어린이날", "2029-06-06": "현충일", "2029-07-17": "제헌절", "2029-08-15": "광복절", "2029-10-03": "개천절", "2029-10-09": "한글날", "2029-09-22": "추석", "2029-09-21": "추석 전날", "2029-09-23": "추석 다음날", "2029-12-25": "기독탄신일", "2029-05-07": "어린이날 대체 휴일", "2029-05-21": "부처님오신날 대체 휴일", "2029-09-24": "추석 대체 휴일", "2030-01-01": "신정연휴", "2030-02-03": "설날", "2030-02-02": "설날 전날", "2030-02-04": "설날 다음날", "2030-03-01": "삼일절", "2030-05-09": "부처님오신날", "2030-05-01": "노동절", "2030-05-05": "어린이날", "2030-06-06": "현충일", "2030-07-17": "제헌절", "2030-08-15": "광복절", "2030-10-03": "개천절", "2030-10-09": "한글날", "2030-09-12": "추석", "2030-09-11": "추석 전날", "2030-09-13": "추석 다음날", "2030-12-25": "기독탄신일", "2030-04-03": "대통령 선거일", "2030-06-12": "지방선거일", "2030-02-05": "설날 대체 휴일", "2030-05-06": "어린이날 대체 휴일", "2031-01-01": "신정연휴", "2031-01-23": "설날", "2031-01-22": "설날 전날", "2031-01-24": "설날 다음날", "2031-03-01": "삼일절", "2031-05-28": "부처님오신날", "2031-05-01": "노동절", "2031-05-05": "어린이날", "2031-06-06": "현충일", "2031-07-17": "제헌절", "2031-08-15": "광복절", "2031-10-03": "개천절", "2031-10-09": "한글날", "2031-10-01": "추석", "2031-09-30": "추석 전날", "2031-10-02": "추석 다음날", "2031-12-25": "기독탄신일", "2031-03-03": "삼일절 대체 휴일", "2032-01-01": "신정연휴", "2032-02-11": "설날", "2032-02-10": "설날 전날", "2032-02-12": "설날 다음날", "2032-03-01": "삼일절", "2032-05-16": "부처님오신날", "2032-05-01": "노동절", "2032-05-05": "어린이날", "2032-06-06": "현충일", "2032-07-17": "제헌절", "2032-08-15": "광복절", "2032-10-03": "개천절", "2032-10-09": "한글날", "2032-09-19": "추석", "2032-09-18": "추석 전날", "2032-09-20": "추석 다음날", "2032-12-25": "기독탄신일", "2032-04-14": "국회의원 선거일", "2032-05-03": "노동절 대체 휴일", "2032-05-17": "부처님오신날 대체 휴일", "2032-07-19": "제헌절 대체 휴일", "2032-08-16": "광복절 대체 휴일", "2032-09-21": "추석 대체 휴일", "2032-10-04": "개천절 대체 휴일", "2032-10-11": "한글날 대체 휴일", "2032-12-27": "기독탄신일 대체 휴일", "2033-01-01": "신정연휴", "2033-01-31": "설날", "2033-01-30": "설날 전날", "2033-02-01": "설날 다음날", "2033-03-01": "삼일절", "2033-05-06": "부처님오신날", "2033-05-01": "노동절", "2033-05-05": "어린이날", "2033-06-06": "현충일", "2033-07-17": "제헌절", "2033-08-15": "광복절", "2033-10-03": "개천절", "2033-10-09": "한글날", "2033-09-08": "추석", "2033-09-07": "추석 전날", "2033-09-09": "추석 다음날", "2033-12-25": "기독탄신일", "2033-02-02": "설날 대체 휴일", "2033-05-02": "노동절 대체 휴일", "2033-07-18": "제헌절 대체 휴일", "2033-10-10": "한글날 대체 휴일", "2033-12-26": "기독탄신일 대체 휴일", "2034-01-01": "신정연휴", "2034-02-19": "설날", "2034-02-18": "설날 전날", "2034-02-20": "설날 다음날", "2034-03-01": "삼일절", "2034-05-25": "부처님오신날", "2034-05-01": "노동절", "2034-05-05": "어린이날", "2034-06-06": "현충일", "2034-07-17": "제헌절", "2034-08-15": "광복절", "2034-10-03": "개천절", "2034-10-09": "한글날", "2034-09-27": "추석", "2034-09-26": "추석 전날", "2034-09-28": "추석 다음날", "2034-12-25": "기독탄신일", "2034-06-14": "지방선거일", "2034-02-21": "설날 대체 휴일", "2035-01-01": "신정연휴", "2035-02-08": "설날", "2035-02-07": "설날 전날", "2035-02-09": "설날 다음날", "2035-03-01": "삼일절", "2035-05-15": "부처님오신날", "2035-05-01": "노동절", "2035-05-05": "어린이날", "2035-06-06": "현충일", "2035-07-17": "제헌절", "2035-08-15": "광복절", "2035-10-03": "개천절", "2035-10-09": "한글날", "2035-09-16": "추석", "2035-09-15": "추석 전날", "2035-09-17": "추석 다음날", "2035-12-25": "기독탄신일", "2035-04-04": "대통령 선거일", "2035-05-07": "어린이날 대체 휴일", "2035-09-18": "추석 대체 휴일", "2036-01-01": "신정연휴", "2036-01-28": "설날", "2036-01-27": "설날 전날", "2036-01-29": "설날 다음날", "2036-03-01": "삼일절", "2036-05-03": "부처님오신날", "2036-05-01": "노동절", "2036-05-05": "어린이날", "2036-06-06": "현충일", "2036-07-17": "제헌절", "2036-08-15": "광복절", "2036-10-03": "개천절; 추석 전날", "2036-10-09": "한글날", "2036-10-04": "추석", "2036-10-05": "추석 다음날", "2036-12-25": "기독탄신일", "2036-04-09": "국회의원 선거일", "2036-01-30": "설날 대체 휴일", "2036-03-03": "삼일절 대체 휴일", "2036-05-06": "부처님오신날 대체 휴일", "2036-10-06": "추석 대체 휴일", "2036-10-07": "추석 대체 휴일", "2037-01-01": "신정연휴", "2037-02-15": "설날", "2037-02-14": "설날 전날", "2037-02-16": "설날 다음날", "2037-03-01": "삼일절", "2037-05-22": "부처님오신날", "2037-05-01": "노동절", "2037-05-05": "어린이날", "2037-06-06": "현충일", "2037-07-17": "제헌절", "2037-08-15": "광복절", "2037-10-03": "개천절", "2037-10-09": "한글날", "2037-09-24": "추석", "2037-09-23": "추석 전날", "2037-09-25": "추석 다음날", "2037-12-25": "기독탄신일", "2037-02-17": "설날 대체 휴일", "2037-03-02": "삼일절 대체 휴일", "2037-08-17": "광복절 대체 휴일", "2037-10-05": "개천절 대체 휴일", "2038-01-01": "신정연휴", "2038-02-04": "설날", "2038-02-03": "설날 전날", "2038-02-05": "설날 다음날", "2038-03-01": "삼일절", "2038-05-11": "부처님오신날", "2038-05-01": "노동절", "2038-05-05": "어린이날", "2038-06-06": "현충일", "2038-07-17": "제헌절", "2038-08-15": "광복절", "2038-10-03": "개천절", "2038-10-09": "한글날", "2038-09-13": "추석", "2038-09-12": "추석 전날", "2038-09-14": "추석 다음날", "2038-12-25": "기독탄신일", "2038-06-02": "지방선거일", "2038-05-03": "노동절 대체 휴일", "2038-07-19": "제헌절 대체 휴일", "2038-08-16": "광복절 대체 휴일", "2038-09-15": "추석 대체 휴일", "2038-10-04": "개천절 대체 휴일", "2038-10-11": "한글날 대체 휴일", "2038-12-27": "기독탄신일 대체 휴일", "2039-01-01": "신정연휴", "2039-01-24": "설날", "2039-01-23": "설날 전날", "2039-01-25": "설날 다음날", "2039-03-01": "삼일절", "2039-04-30": "부처님오신날", "2039-05-01": "노동절", "2039-05-05": "어린이날", "2039-06-06": "현충일", "2039-07-17": "제헌절", "2039-08-15": "광복절", "2039-10-03": "개천절; 추석 다음날", "2039-10-09": "한글날", "2039-10-02": "추석", "2039-10-01": "추석 전날", "2039-12-25": "기독탄신일", "2039-01-26": "설날 대체 휴일", "2039-05-02": "부처님오신날 대체 휴일", "2039-05-03": "노동절 대체 휴일", "2039-07-18": "제헌절 대체 휴일", "2039-10-04": "추석 대체 휴일", "2039-10-05": "추석 대체 휴일", "2039-10-10": "한글날 대체 휴일", "2039-12-26": "기독탄신일 대체 휴일", "2040-01-01": "신정연휴", "2040-02-12": "설날", "2040-02-11": "설날 전날", "2040-02-13": "설날 다음날", "2040-03-01": "삼일절", "2040-05-18": "부처님오신날", "2040-05-01": "노동절", "2040-05-05": "어린이날", "2040-06-06": "현충일", "2040-07-17": "제헌절", "2040-08-15": "광복절", "2040-10-03": "개천절", "2040-10-09": "한글날", "2040-09-21": "추석", "2040-09-20": "추석 전날", "2040-09-22": "추석 다음날", "2040-12-25": "기독탄신일", "2040-04-11": "국회의원 선거일", "2040-04-04": "대통령 선거일", "2040-02-14": "설날 대체 휴일", "2040-05-07": "어린이날 대체 휴일"};
+
+function daysBetween(a, b) {
+  return Math.round((b - a) / 86400000);
+}
+
+function pad2(n) { return String(n).padStart(2, "0"); }
+function isoDate(y, m, d) { return `${y}-${pad2(m)}-${pad2(d)}`; }
+
+function mod(n, m) { return ((n % m) + m) % m; }
+
+function getSettings(year, month) {
+  const key = `settings:${year}-${pad2(month)}`;
+  let raw = null;
+  try { raw = localStorage.getItem(key); } catch (e) {}
+  const defaults = { weekendNews: false, biweeklyFridayOff: false, localHolidays: [] };
+  if (!raw) return defaults;
+  try { return Object.assign(defaults, JSON.parse(raw)); } catch (e) { return defaults; }
+}
+function saveSettings(year, month, settings) {
+  const key = `settings:${year}-${pad2(month)}`;
+  try { localStorage.setItem(key, JSON.stringify(settings)); } catch (e) {}
+}
+
+// 특정 날짜에 대한 수동 근무 수정(자동 계산을 덮어씀)
+function getOverride(iso) {
+  try {
+    const raw = localStorage.getItem(`override:${iso}`);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) { return {}; }
+}
+function saveOverride(iso, ov) {
+  try {
+    if (Object.keys(ov).length === 0) localStorage.removeItem(`override:${iso}`);
+    else localStorage.setItem(`override:${iso}`, JSON.stringify(ov));
+  } catch (e) {}
+}
+
+const GROUP_OPTIONS = {
+  songchul: [["자동", "__auto__"], ["-", "-"], ["M", "M"], ["N", "N"], ["DN", "DN"]],
+  news: [["자동", "__auto__"], ["AD", "AD"], ["DP", "DP"], ["R", "R"], ["D", "D"], ["휴무", ""]],
+  md: [["자동", "__auto__"], ["AD", "AD"], ["DP", "DP"], ["ADP", "ADP"], ["-", "-"]],
+};
+
+function daysInMonth(year, month) { return new Date(year, month, 0).getDate(); }
+
+// 하루치 근무 계산
+function computeDay(year, month, day, settings) {
+  const d = new Date(year, month - 1, day);
+  const wd = d.getDay();
+  const wname = WEEKDAY_KR[wd];
+  const isWeekend = (wd === 0 || wd === 6);
+  const difference = daysBetween(REF_DATE, new Date(year, month - 1, 1));
+
+  // 송출실 (3인)
+  const tx = mod(day + difference + 1, 3);
+  let songchul = ({1: ["-", "M", "N"], 2: ["N", "-", "M"], 0: ["M", "N", "-"]})[tx];
+  if (isWeekend) songchul = songchul.map(v => v === "N" ? "DN" : v);
+
+  // 뉴스/송출 (4인)
+  const j = mod(day + difference, 4);
+  let news = ({
+    0: ["AD", "R", "D", "DP"],
+    1: ["R", "D", "DP", "AD"],
+    2: ["D", "DP", "AD", "R"],
+    3: ["DP", "AD", "R", "D"],
+  })[j];
+  if (isWeekend) {
+    if (!settings.weekendNews) {
+      news = news.map(() => "");
+    } else if (wd === 6) { // 토요일
+      news = news.map(() => "");
+    } else if (wd === 0) { // 일요일: DP만 유지
+      news = news.map(v => v === "DP" ? v : "");
+    }
+  }
+
+  // MD (3인)
+  const radio = mod(day + difference + 1, 3);
+  let md = ({0: ["AD", "DP", "-"], 1: ["-", "AD", "DP"], 2: ["DP", "-", "AD"]})[radio];
+
+  // 공휴일 (법정 + 지정)
+  const iso = isoDate(year, month, day);
+  const isStatutory = !!KR_HOLIDAYS[iso];
+  const isLocal = settings.localHolidays.includes(iso);
+  const isHoliday = isStatutory || isLocal;
+  if (isHoliday) {
+    news = news.map(v => (v === "R" || v === "D") ? "" : v);
+    if (md[0] === "R" || md[0] === "D") md[0] = "";
+  }
+
+  // 수동 수정(저장된 개별 근무 변경) 적용 - 항상 최종 우선 적용
+  const manualOverride = getOverride(iso);
+  Object.keys(manualOverride).forEach(key => {
+    const [g, i] = key.split(":");
+    const idx = Number(i);
+    if (g === "songchul") songchul[idx] = manualOverride[key];
+    else if (g === "news") news[idx] = manualOverride[key];
+    else if (g === "md") md[idx] = manualOverride[key];
+  });
+
+  return { day, wname, isWeekend, isHoliday, holidayName: KR_HOLIDAYS[iso] || null,
+           songchul, news, md, hasOverride: Object.keys(manualOverride).length > 0 };
+}
+
+function monthData(year, month, settings) {
+  const n = daysInMonth(year, month);
+  const out = [];
+  for (let day = 1; day <= n; day++) out.push(computeDay(year, month, day, settings));
+
+  // 격주 금요일 (2,4번째) 표시
+  if (settings.biweeklyFridayOff) {
+    const fridays = out.filter(r => r.wname === "금").map(r => r.day);
+    const marks = [fridays[1], fridays[3]].filter(Boolean);
+    out.forEach(r => { r.biweeklyOff = marks.includes(r.day); });
+  } else {
+    out.forEach(r => { r.biweeklyOff = false; });
+  }
+  return out;
+}
+
+/* ===================== UI ===================== */
+function switchTab(id) {
+  const current = document.querySelector(".tabpage.active");
+  if (current && current.id === "tab-date" && id !== "tab-date" && editMode) {
+    cancelEdit();
+    renderDateResult();
+  }
+  // 설정 탭을 벗어날 때, "추가"를 누르지 않은 지정 휴일 날짜 선택은 취소된 것으로 간주하고 비움
+  if (current && current.id === "tab-settings" && id !== "tab-settings") {
+    const holidayInput = document.getElementById("localHolidayDate");
+    if (holidayInput) holidayInput.value = "";
+  }
+  document.querySelectorAll(".tabpage").forEach(el => el.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  document.querySelectorAll("nav.tabs button").forEach(b => b.classList.toggle("active", b.dataset.tab === id));
+  if (id === "tab-month") renderMonthStrip(); // 수동 수정 내용이 최신으로 반영되도록 재렌더링
+  if (id === "tab-date") fitDateCardToScreen(); // 탭이 실제로 보이는 상태에서 높이를 다시 측정
+  if (id === "tab-notice" && typeof onNoticeTabOpen === "function") onNoticeTabOpen(); // 공지 목록 불러오기
+}
+
+/* ===================== 좌우 스와이프로 탭 전환 ===================== */
+(function setupSwipeTabs() {
+  const TAB_ORDER = ["tab-date", "tab-month", "tab-notice", "tab-settings"];
+  const mainEl = document.querySelector("main");
+  let startX = 0, startY = 0, tracking = false;
+
+  mainEl.addEventListener("touchstart", (e) => {
+    if (e.touches.length !== 1) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    tracking = true;
+  }, { passive: true });
+
+  mainEl.addEventListener("touchend", (e) => {
+    if (!tracking) return;
+    tracking = false;
+    const endX = e.changedTouches[0].clientX;
+    const endY = e.changedTouches[0].clientY;
+    const dx = endX - startX;
+    const dy = endY - startY;
+    const THRESHOLD = 60;
+    if (Math.abs(dx) < THRESHOLD || Math.abs(dx) < Math.abs(dy) * 1.3) return;
+
+    const activeId = document.querySelector(".tabpage.active").id;
+    const idx = TAB_ORDER.indexOf(activeId);
+    if (idx === -1) return;
+    if (dx < 0 && idx < TAB_ORDER.length - 1) {
+      switchTab(TAB_ORDER[idx + 1]); // 왼쪽으로 밀면 다음 탭
+    } else if (dx > 0 && idx > 0) {
+      switchTab(TAB_ORDER[idx - 1]); // 오른쪽으로 밀면 이전 탭
+    }
+  }, { passive: true });
+})();
+
+function codeClass(code) {
+  if (!code) return "blank";
+  if (code === "-") return "dash";
+  return code;
+}
+
+let editMode = false;
+
+function cancelEdit() {
+  if (!editMode) return;
+  editMode = false;
+  const btn = document.getElementById("editSaveBtn");
+  if (btn) btn.textContent = "수정";
+  const dateInput = document.getElementById("lookupDate");
+  if (dateInput) dateInput.disabled = false;
+  const todayBtn = document.getElementById("todayBtnDate");
+  if (todayBtn) todayBtn.disabled = false;
+}
+
+function toggleEditSave() {
+  const val = document.getElementById("lookupDate").value;
+  if (!val) return;
+  if (!editMode) {
+    editMode = true;
+    document.getElementById("editSaveBtn").textContent = "저장";
+    document.getElementById("lookupDate").disabled = true;
+    document.getElementById("todayBtnDate").disabled = true;
+    renderDateResult();
+  } else {
+    const ov = getOverride(val);
+    Object.keys(GROUP_NAMES).forEach(group => {
+      GROUP_NAMES[group].forEach((name, idx) => {
+        const sel = document.getElementById(`edit-${group}-${idx}`);
+        if (!sel) return;
+        const key = `${group}:${idx}`;
+        if (sel.value === "__auto__") delete ov[key];
+        else ov[key] = sel.value;
+      });
+    });
+    saveOverride(val, ov);
+    cancelEdit();
+    renderDateResult();
+  }
+}
+
+function goToToday() {
+  cancelEdit();
+  const today = new Date();
+  document.getElementById("lookupDate").value =
+    `${today.getFullYear()}-${pad2(today.getMonth() + 1)}-${pad2(today.getDate())}`;
+  renderDateResult();
+}
+
+function renderDateResult() {
+  const val = document.getElementById("lookupDate").value;
+  const box = document.getElementById("dateResult");
+  if (!val) { box.innerHTML = ""; return; }
+  const [y, m, d] = val.split("-").map(Number);
+  const settings = getSettings(y, m);
+  const rec = computeDay(y, m, d, settings);
+
+  let html = `<div class="card">
+    <div class="badgeday">
+      <span class="num">${d}</span><span class="wd">${rec.wname}요일</span>
+      ${rec.isWeekend ? '<span class="tag off">주말</span>' : ''}
+      ${rec.isHoliday ? `<span class="tag off">${rec.holidayName || '휴일'}</span>` : ''}
+      ${rec.hasOverride ? `<span class="tag off">수정됨</span>` : ''}
+    </div>`;
+
+  html += renderGroup("송출실", GROUP_NAMES.songchul, rec.songchul, "songchul", editMode);
+  html += renderGroup("뉴스 / 송출", GROUP_NAMES.news, rec.news, "news", editMode);
+  html += renderGroup("MD", GROUP_NAMES.md, rec.md, "md", editMode);
+  html += `</div>`;
+  box.innerHTML = html;
+
+  fitDateCardToScreen();
+}
+
+// 화면 높이에 맞춰 일간 보기 카드의 여백(패딩)을 자동으로 줄여서, 가능한 한
+// 스크롤 없이 한 화면에 들어오게 함. 폰트 크기는 가독성을 위해 건드리지 않고,
+// 이미 최소 여백까지 줄였는데도 안 들어가면 자연스럽게 스크롤되도록 둠.
+function fitDateCardToScreen() {
+  const card = document.querySelector("#tab-date .card");
+  if (!card) return;
+
+  // 기본값으로 초기화 후 다시 측정 (창 크기 변화 등에 대응)
+  card.style.setProperty("--pr-pad", "7px");
+  card.style.setProperty("--gl-mt", "10px");
+
+  const viewportH = window.innerHeight;
+  const top = card.getBoundingClientRect().top;
+  const RESERVED_BELOW = 96; // 하단 탭바 + 안전영역 + 여백
+  const available = viewportH - top - RESERVED_BELOW;
+  const natural = card.scrollHeight;
+
+  if (natural <= available) return; // 이미 잘 들어가면 그대로 둠
+
+  const overshoot = natural - available;
+  const rowCount = document.querySelectorAll("#tab-date .person-row").length || 10;
+  // person-row 패딩(위+아래)과 grouplabel 위 여백을 함께 줄여 초과분을 상쇄
+  const shavePerRow = overshoot / (rowCount * 2 + 3);
+  const newPad = Math.max(3, Math.round(7 - shavePerRow));
+  const newGlMt = Math.max(5, Math.round(10 - shavePerRow));
+  card.style.setProperty("--pr-pad", newPad + "px");
+  card.style.setProperty("--gl-mt", newGlMt + "px");
+}
+
+function renderGroup(label, names, codes, group, edit) {
+  let html = `<div class="grouplabel">${label}</div>`;
+  names.forEach((name, i) => {
+    const c = codes[i];
+    if (edit) {
+      const options = GROUP_OPTIONS[group].map(([lab, v]) =>
+        `<option value="${v}" ${v === c ? "selected" : ""}>${lab}</option>`
+      ).join("");
+      html += `<div class="person-row"><span class="name">${name}</span>
+        <select class="editselect" id="edit-${group}-${i}">${options}</select></div>`;
+    } else {
+      html += `<div class="person-row"><span class="name">${name}</span>
+        <span class="code ${codeClass(c)}">${c ? c : '휴무'}</span></div>`;
+    }
+  });
+  return html;
+}
+
+function getFavoritePerson() {
+  try { return localStorage.getItem("favoritePerson") || "news:2"; } catch (e) { return "news:2"; }
+}
+function setFavoritePerson(key) {
+  try { localStorage.setItem("favoritePerson", key); } catch (e) {}
+}
+
+// 월간 보기에서 현재 보고 있는 연/월 (화살표로 이동)
+const viewState = { year: null, month: null };
+
+function goToday() {
+  const today = new Date();
+  viewState.year = today.getFullYear();
+  viewState.month = today.getMonth() + 1;
+  renderMonthStrip();
+}
+
+function shiftMonth(delta) {
+  let y = viewState.year, m = viewState.month + delta;
+  if (m < 1) { m = 12; y -= 1; }
+  if (m > 12) { m = 1; y += 1; }
+  viewState.year = y; viewState.month = m;
+  renderMonthStrip();
+}
+
+function renderMonthStrip() {
+  const y = viewState.year, m = viewState.month;
+  const personKey = document.getElementById("personSelect").value; // "news:0" 등
+  const [group, idxStr] = personKey.split(":");
+  const idx = Number(idxStr);
+  const settings = getSettings(y, m);
+  const data = monthData(y, m, settings);
+
+  document.getElementById("monthLabel").textContent = `${y}년 ${m}월`;
+
+  // 설정 탭의 "이 달 설정" 연/월도 월간 보기와 동기화
+  const settingsYearEl = document.getElementById("settingsYearInput");
+  const settingsMonthEl = document.getElementById("settingsMonthNumSelect");
+  if (settingsYearEl && settingsMonthEl) {
+    settingsYearEl.value = y;
+    settingsMonthEl.value = m;
+    renderSettings();
+  }
+
+  const today = new Date();
+  const strip = document.getElementById("monthStrip");
+  strip.innerHTML = "";
+
+  // 1일이 무슨 요일인지에 맞춰 앞쪽에 빈 칸을 채워 요일 헤더와 정렬
+  const leadBlanks = new Date(y, m - 1, 1).getDay(); // 0=일 ... 6=토
+
+  // 이번 달이 몇 주(줄)로 표시되는지 계산
+  const totalCells = leadBlanks + data.length;
+  const weekRows = Math.ceil(totalCells / 7);
+  const GAP = 6;
+
+  // 지금 접속한 폰의 실제 화면 높이를 측정해서, 어떤 기종이든 달력이 스크롤 없이
+  // 한 화면에 맞도록 칸 높이를 계산 (특정 기종 크기에 고정하지 않음)
+  const viewportH = window.innerHeight;
+  const stripTop = strip.getBoundingClientRect().top;
+  const RESERVED_BELOW = 96; // 하단 탭바 + 안전영역 + 여백
+  const availableH = viewportH - stripTop - RESERVED_BELOW;
+  const rowH = Math.max(38, Math.min(90, Math.floor((availableH - (weekRows - 1) * GAP) / weekRows)));
+  strip.style.gridAutoRows = rowH + "px";
+
+  for (let i = 0; i < leadBlanks; i++) {
+    const blank = document.createElement("div");
+    blank.className = "daycell empty";
+    strip.appendChild(blank);
+  }
+
+  data.forEach(rec => {
+    const code = rec[group][idx];
+    const isBiweeklyOff = rec.biweeklyOff && group === "news";
+    const cell = document.createElement("div");
+    cell.className = "daycell" + (rec.isWeekend || rec.isHoliday ? " weekend" : "") +
+      (rec.isHoliday ? " holiday" : "") +
+      (rec.day === today.getDate() && m === today.getMonth() + 1 && y === today.getFullYear() ? " today" : "");
+    cell.innerHTML = `<div class="d">${rec.day}</div><div class="c">${code || '-'}</div>` +
+      (isBiweeklyOff ? `<div class="bw">오후휴무</div>` : "");
+    cell.style.cursor = "pointer";
+    cell.addEventListener("click", () => goToDateCheck(y, m, rec.day));
+    strip.appendChild(cell);
+  });
+}
+
+function goToDateCheck(y, m, day) {
+  document.getElementById("lookupDate").value = `${y}-${pad2(m)}-${pad2(day)}`;
+  renderDateResult();
+  switchTab("tab-date");
+}
+
+/* ===================== 인쇄 / PDF 출력 ===================== */
+const PRINT_GROUP_DEFS = [
+  ["송<br>출<br>실", "songchul"],
+  ["뉴스/<br>송출", "news"],
+  ["MD", "md"],
+];
+const PRINT_LEGEND = [
+  "▶ 근무형태 :",
+  "· AD (08:30~16:30) : 뉴스센터 TD 및 송출실 근무, 5시뉴스 TD근무 후 퇴근 / 휴일(08:30~16:30) : 라디오 동시 근무",
+  "· DP (13:00~21:00) : 뉴스센터 TD 및 송출실 근무, 5시뉴스 AUDIO / 휴일(16:30~21:00) : 라디오 동시 근무",
+  "· R (09:00~18:00) : 라디오 근무, TV 930뉴스 AUDIO / 휴일 5시 라디오뉴스 무인 자동",
+  "· D : 휴가자 및 근무 변경 시 대근, 송/중계소 업무 보조",
+];
+
+function buildPrintTableHTML(y, m, highlightFavorite) {
+  const settings = getSettings(y, m);
+  const data = monthData(y, m, settings);
+  const favorite = highlightFavorite ? getFavoritePerson() : null;
+  const shadeCls = (rec) => (rec.isWeekend || rec.isHoliday) ? "wk" : "";
+
+  let html = `<div class="print-header">
+    <h1>기술국 ${m}월 근무표</h1>
+    <table class="approval-box">
+      <colgroup><col style="width:11mm"><col style="width:20mm"></colgroup>
+      <tbody>
+        <tr><td rowspan="3">결<br>재</td><td>국장</td></tr>
+        <tr><td class="stampcell" rowspan="2"></td></tr>
+      </tbody>
+    </table>
+  </div>`;
+
+  // 인원/일자 칸(대각선 구분) + 이름 칸 + 날짜 칸 너비를 고정 비율로 지정해서
+  // 모든 날짜 칸의 너비가 서로 같아지도록 함
+  const dayColWidth = (88 / data.length).toFixed(3);
+  html += `<table class="print-table">
+    <colgroup>
+      <col style="width:5%"><col style="width:7%">`;
+  data.forEach(() => { html += `<col style="width:${dayColWidth}%">`; });
+  html += `</colgroup>
+    <thead>
+      <tr>
+        <th class="cornercell" colspan="2" rowspan="2">
+          <svg class="corner-diag" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <line x1="0" y1="0" x2="100" y2="100" stroke="#666" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+          </svg>
+          <span class="corner-top">일자</span><span class="corner-bottom">인원</span>
+        </th>`;
+  data.forEach(rec => {
+    html += `<th class="${shadeCls(rec)}">${rec.day}</th>`;
+  });
+  html += `</tr><tr>`;
+  data.forEach(rec => {
+    const dayCls = rec.wname === "일" ? "sun" : rec.wname === "토" ? "sat" : "";
+    html += `<th class="${shadeCls(rec)} ${dayCls}">${rec.wname}</th>`;
+  });
+  html += `</tr></thead><tbody>`;
+
+  PRINT_GROUP_DEFS.forEach(([label, key]) => {
+    const names = GROUP_NAMES[key];
+    names.forEach((name, idx) => {
+      const isHighlighted = favorite === `${key}:${idx}`;
+      html += `<tr class="${isHighlighted ? "highlightrow" : ""}">`;
+      if (idx === 0) html += `<td class="grouplabelcell" rowspan="${names.length}">${label}</td>`;
+      html += `<td class="namecell">${name}</td>`;
+      data.forEach(rec => {
+        const code = rec[key][idx];
+        const display = code || (key === "news" ? "-" : "");
+        const isBiweeklyNews = key === "news" && rec.biweeklyOff;
+        const cellCls = shadeCls(rec) || (isBiweeklyNews ? "wk" : "");
+        html += `<td class="${cellCls}">${display}</td>`;
+      });
+      html += `</tr>`;
+    });
+  });
+  html += `</tbody></table>`;
+
+  html += `<div class="print-legend">` + PRINT_LEGEND.map(line => `<p>${line}</p>`).join("") + `</div>`;
+
+  return html;
+}
+
+function printSchedule() {
+  const y = Number(document.getElementById("settingsYearInput").value);
+  const m = Number(document.getElementById("settingsMonthNumSelect").value);
+  if (!y || !m) return;
+  const highlightFavorite = document.getElementById("printHighlightToggle").checked;
+  document.getElementById("printArea").innerHTML = buildPrintTableHTML(y, m, highlightFavorite);
+  window.print();
+}
+
+/* ===================== 설정값 내보내기 / 불러오기 ===================== */
+function collectAppData() {
+  const data = {};
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith("settings:") || key.startsWith("override:") || key === "favoritePerson")) {
+        data[key] = localStorage.getItem(key);
+      }
+    }
+  } catch (e) {}
+  return data;
+}
+
+function exportSettings() {
+  const data = collectAppData();
+  const count = Object.keys(data).length;
+  const proceed = confirm(`현재 기기에 저장된 설정값(${count}개 항목: 기본 근무자, 이 달 설정, 날짜별 수정 내용)을 파일로 내보낼까요?`);
+  if (!proceed) return;
+
+  const payload = { app: "기술국 근무표", exportedAt: new Date().toISOString(), data };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const today = new Date();
+  const filename = `근무표_설정백업_${today.getFullYear()}${pad2(today.getMonth() + 1)}${pad2(today.getDate())}.json`;
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  document.getElementById("importStatus").textContent = `"${filename}" 파일로 저장했습니다.`;
+}
+
+function importSettings(event) {
+  const file = event.target.files[0];
+  const statusEl = document.getElementById("importStatus");
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const payload = JSON.parse(reader.result);
+      const data = payload && payload.data ? payload.data : payload;
+      let count = 0;
+      Object.keys(data).forEach(key => {
+        if (key.startsWith("settings:") || key.startsWith("override:") || key === "favoritePerson") {
+          localStorage.setItem(key, data[key]);
+          count++;
+        }
+      });
+      if (count === 0) {
+        statusEl.textContent = "올바른 백업 파일을 찾지 못했습니다. 파일을 확인해주세요.";
+        return;
+      }
+      statusEl.textContent = `${count}개 항목을 복구했습니다.`;
+      // 복구된 데이터가 화면에 바로 반영되도록 다시 렌더링
+      populatePersonOptions(document.getElementById("favoritePersonSelect"));
+      document.getElementById("favoritePersonSelect").value = getFavoritePerson();
+      renderSettings();
+      renderMonthStrip();
+      renderDateResult();
+    } catch (e) {
+      statusEl.textContent = "파일을 읽는 중 오류가 발생했습니다. 올바른 백업 파일인지 확인해주세요.";
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = "";
+}
+
+function populatePersonOptions(selectEl) {
+  selectEl.innerHTML = "";
+  Object.keys(GROUP_NAMES).forEach(group => {
+    GROUP_NAMES[group].forEach((name, idx) => {
+      const opt = document.createElement("option");
+      opt.value = `${group}:${idx}`;
+      opt.textContent = name;
+      selectEl.appendChild(opt);
+    });
+  });
+}
+
+function renderSettings() {
+  const y = Number(document.getElementById("settingsYearInput").value);
+  const m = Number(document.getElementById("settingsMonthNumSelect").value);
+  if (!y || !m) return;
+  const settings = getSettings(y, m);
+  document.getElementById("weekendNewsToggle").checked = settings.weekendNews;
+  document.getElementById("biweeklyToggle").checked = settings.biweeklyFridayOff;
+  const chips = document.getElementById("localHolidayChips");
+  chips.innerHTML = "";
+  settings.localHolidays.forEach(iso => {
+    const chip = document.createElement("span");
+    chip.className = "chip";
+    chip.innerHTML = `${iso} <button onclick="removeLocalHoliday('${iso}')" aria-label="삭제">&times;</button>`;
+    chips.appendChild(chip);
+  });
+}
+
+function addLocalHoliday() {
+  const val = document.getElementById("localHolidayDate").value;
+  if (!val) return;
+  const [y, m] = val.split("-").map(Number);
+  const settings = getSettings(y, m);
+  if (!settings.localHolidays.includes(val)) settings.localHolidays.push(val);
+  saveSettings(y, m, settings);
+  document.getElementById("settingsYearInput").value = y;
+  document.getElementById("settingsMonthNumSelect").value = m;
+  document.getElementById("localHolidayDate").value = "";
+  renderSettings();
+  renderMonthStrip();
+}
+function removeLocalHoliday(iso) {
+  const [y, m] = iso.split("-").map(Number);
+  const settings = getSettings(y, m);
+  settings.localHolidays = settings.localHolidays.filter(v => v !== iso);
+  saveSettings(y, m, settings);
+  renderSettings();
+  renderMonthStrip();
+}
+
+function populateMonthNumSelect(selectEl) {
+  selectEl.innerHTML = "";
+  for (let mo = 1; mo <= 12; mo++) {
+    const opt = document.createElement("option");
+    opt.value = mo;
+    opt.textContent = `${mo}월`;
+    selectEl.appendChild(opt);
+  }
+}
+
+function populateYearSelect(selectEl, startYear, endYear) {
+  selectEl.innerHTML = "";
+  for (let yr = startYear; yr <= endYear; yr++) {
+    const opt = document.createElement("option");
+    opt.value = yr;
+    opt.textContent = `${yr}년`;
+    selectEl.appendChild(opt);
+  }
+}
+
+document.getElementById("lookupDate").addEventListener("change", renderDateResult);
+document.getElementById("personSelect").addEventListener("change", renderMonthStrip);
+document.getElementById("settingsYearInput").addEventListener("change", renderSettings);
+document.getElementById("settingsMonthNumSelect").addEventListener("change", renderSettings);
+
+// 지정 휴일 날짜 선택기: 탭하면 월간 보기와 같은 달의 1일로 이동해서 열립니다.
+// (자동 취소 감지는 기종별로 동작이 달라 안정적이지 않아, 대신 "지우기" 버튼으로 직접 비울 수 있게 함)
+const holidayDateInput = document.getElementById("localHolidayDate");
+
+holidayDateInput.addEventListener("focus", (e) => {
+  if (!e.target.value) {
+    const y = viewState.year, m = viewState.month;
+    e.target.value = `${y}-${pad2(m)}-01`;
+  }
+});
+
+function clearHolidayDate() {
+  holidayDateInput.value = "";
+}
+
+document.getElementById("favoritePersonSelect").addEventListener("change", (e) => {
+  setFavoritePerson(e.target.value);
+  document.getElementById("personSelect").value = e.target.value;
+  renderMonthStrip();
+});
+document.getElementById("weekendNewsToggle").addEventListener("change", (e) => {
+  const y = Number(document.getElementById("settingsYearInput").value);
+  const m = Number(document.getElementById("settingsMonthNumSelect").value);
+  const settings = getSettings(y, m);
+  settings.weekendNews = e.target.checked;
+  saveSettings(y, m, settings);
+  renderMonthStrip();
+});
+document.getElementById("biweeklyToggle").addEventListener("change", (e) => {
+  const y = Number(document.getElementById("settingsYearInput").value);
+  const m = Number(document.getElementById("settingsMonthNumSelect").value);
+  const settings = getSettings(y, m);
+  settings.biweeklyFridayOff = e.target.checked;
+  saveSettings(y, m, settings);
+  renderMonthStrip();
+});
+
+// 초기화
+(function init() {
+  const today = new Date();
+  document.getElementById("lookupDate").value =
+    `${today.getFullYear()}-${pad2(today.getMonth() + 1)}-${pad2(today.getDate())}`;
+  renderDateResult();
+
+  viewState.year = today.getFullYear();
+  viewState.month = today.getMonth() + 1;
+
+  populateYearSelect(document.getElementById("settingsYearInput"), today.getFullYear() - 10, today.getFullYear() + 30);
+  document.getElementById("settingsYearInput").value = today.getFullYear();
+  populateMonthNumSelect(document.getElementById("settingsMonthNumSelect"));
+  document.getElementById("settingsMonthNumSelect").value = today.getMonth() + 1;
+
+  populatePersonOptions(document.getElementById("personSelect"));
+  populatePersonOptions(document.getElementById("favoritePersonSelect"));
+  const fav = getFavoritePerson();
+  document.getElementById("personSelect").value = fav;
+  document.getElementById("favoritePersonSelect").value = fav;
+
+  renderMonthStrip();
+  renderSettings();
+
+  // 화면 회전이나 창 크기 변화(예: 폴더블폰 펼침/접힘) 시 달력 칸 높이를 다시 계산
+  let resizeTimer = null;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      if (document.getElementById("tab-month").classList.contains("active")) renderMonthStrip();
+      if (document.getElementById("tab-date").classList.contains("active")) fitDateCardToScreen();
+    }, 150);
+  });
+})();
+</script>
+
+<script>
+/* ===================== 공지 / 웹 푸시 (Firebase) ===================== */
+// ▼▼▼ Firebase 콘솔에서 복사한 값으로 교체하세요 (SETUP.md 참고) ▼▼▼
+const FIREBASE_CONFIG = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.firebasestorage.app",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID",
+};
+const VAPID_KEY = "YOUR_WEB_PUSH_PUBLIC_KEY"; // 웹 푸시 인증서(공개 키)
+// ▲▲▲ 여기까지 ▲▲▲
+
+const PUSH_CONFIGURED = !FIREBASE_CONFIG.apiKey.startsWith("YOUR_") && !VAPID_KEY.startsWith("YOUR_");
+const FB_VERSION = "10.14.1";
+const ALL_NAMES = [].concat(GROUP_NAMES.songchul, GROUP_NAMES.news, GROUP_NAMES.md);
+
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+function lsDel(k) { try { localStorage.removeItem(k); } catch (e) {} }
+function todayStr() {
+  const t = new Date();
+  return `${t.getFullYear()}-${pad2(t.getMonth() + 1)}-${pad2(t.getDate())}`;
+}
+
+// Firebase는 필요할 때만 불러옵니다. (오프라인이거나 설정 전이어도 근무표 기능에는 영향 없음)
+let fbPromise = null;
+function loadFb() {
+  if (!PUSH_CONFIGURED) return Promise.reject(new Error("not-configured"));
+  if (fbPromise) return fbPromise;
+  const base = `https://www.gstatic.com/firebasejs/${FB_VERSION}/`;
+  fbPromise = Promise.all([
+    import(base + "firebase-app.js"),
+    import(base + "firebase-auth.js"),
+    import(base + "firebase-firestore.js"),
+    import(base + "firebase-messaging.js"),
+  ]).then(async ([appM, authM, fsM, msgM]) => {
+    const app = appM.initializeApp(FIREBASE_CONFIG);
+    const auth = authM.getAuth(app);
+    await auth.authStateReady();
+    if (!auth.currentUser) await authM.signInAnonymously(auth);
+    const db = fsM.initializeFirestore(app, { experimentalAutoDetectLongPolling: true });
+    return { app, auth, db, fs: fsM, msg: msgM };
+  }).catch((err) => { fbPromise = null; throw err; });
+  return fbPromise;
+}
+
+function isIOS() {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+function isStandaloneApp() {
+  return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+}
+function pushSupported() {
+  return "Notification" in window && "serviceWorker" in navigator && "PushManager" in window;
+}
+
+/* ---------- 알림 켜기 / 끄기 ---------- */
+function setPushMsg(t) {
+  const el = document.getElementById("pushStatus");
+  if (el) el.textContent = t;
+}
+
+function refreshPushStatus() {
+  const sel = document.getElementById("pushNameSelect");
+  let msg;
+  if (!PUSH_CONFIGURED) {
+    msg = "알림 서버 설정이 아직 되어 있지 않습니다. (SETUP.md 참고)";
+  } else if (!pushSupported()) {
+    msg = isIOS() && !isStandaloneApp()
+      ? "아이폰에서는 홈 화면에 추가한 앱으로 열어야 알림을 켤 수 있습니다."
+      : "이 브라우저는 푸시 알림을 지원하지 않습니다.";
+  } else if (Notification.permission === "denied") {
+    msg = "알림이 차단되어 있습니다. 기기(브라우저) 설정에서 이 앱의 알림을 허용해 주세요.";
+  } else if (lsGet("pushEnabled") === "1" && Notification.permission === "granted") {
+    msg = `✅ 켜짐 · ${lsGet("pushName") || ""} 님으로 등록됨`;
+    if (sel && sel.value !== lsGet("pushName")) msg += " (이름을 바꾸려면 '알림 켜기'를 다시 눌러 주세요)";
+  } else {
+    msg = "꺼짐 · 내 이름을 고르고 '알림 켜기'를 눌러 주세요.";
+  }
+  setPushMsg(msg);
+}
+
+async function saveTokenDoc(fb, name, token) {
+  const { doc, setDoc, serverTimestamp } = fb.fs;
+  await setDoc(doc(fb.db, "tokens", fb.auth.currentUser.uid), { name, token, updatedAt: serverTimestamp() });
+  lsSet("pushToken", token);
+  lsSet("pushLastSync", String(Date.now()));
+}
+
+async function enablePush() {
+  if (!PUSH_CONFIGURED || !pushSupported()) { refreshPushStatus(); return; }
+  const name = document.getElementById("pushNameSelect").value;
+  if (!name) { setPushMsg("내 이름을 먼저 선택해 주세요."); return; }
+
+  // 아이폰은 버튼을 누른 직후에 바로 권한을 요청해야 하므로, 다른 await보다 먼저 호출
+  let perm;
+  try { perm = await Notification.requestPermission(); } catch (e) { perm = Notification.permission; }
+  if (perm !== "granted") { refreshPushStatus(); return; }
+
+  setPushMsg("알림을 설정하는 중…");
+  try {
+    const fb = await loadFb();
+    if (!(await fb.msg.isSupported())) { setPushMsg("이 기기/브라우저는 푸시 알림을 지원하지 않습니다."); return; }
+    const reg = await navigator.serviceWorker.ready;
+    const token = await fb.msg.getToken(fb.msg.getMessaging(fb.app), {
+      vapidKey: VAPID_KEY,
+      serviceWorkerRegistration: reg,
+    });
+    if (!token) throw new Error("no-token");
+    await saveTokenDoc(fb, name, token);
+    lsSet("pushEnabled", "1");
+    lsSet("pushName", name);
+    refreshPushStatus();
+  } catch (e) {
+    console.error(e);
+    setPushMsg("알림 설정에 실패했습니다. 인터넷 연결을 확인하고 다시 시도해 주세요. (" + (e.code || e.message || e) + ")");
+  }
+}
+
+async function disablePush() {
+  if (lsGet("pushEnabled") === "1" && PUSH_CONFIGURED) {
+    try {
+      const fb = await loadFb();
+      try { await fb.fs.deleteDoc(fb.fs.doc(fb.db, "tokens", fb.auth.currentUser.uid)); } catch (e) { console.error(e); }
+      try { await fb.msg.deleteToken(fb.msg.getMessaging(fb.app)); } catch (e) { console.error(e); }
+    } catch (e) {
+      setPushMsg("인터넷에 연결된 상태에서 다시 시도해 주세요.");
+      return; // 서버 등록이 남지 않도록, 연결 실패 시에는 꺼진 것으로 처리하지 않음
+    }
+  }
+  lsDel("pushEnabled"); lsDel("pushToken"); lsDel("pushLastSync");
+  refreshPushStatus();
+}
+
+async function testLocalNotification() {
+  if (!("Notification" in window) || !("serviceWorker" in navigator)) { refreshPushStatus(); return; }
+  let perm = Notification.permission;
+  if (perm === "default") { try { perm = await Notification.requestPermission(); } catch (e) {} }
+  if (perm !== "granted") { refreshPushStatus(); return; }
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    await reg.showNotification("기술국 근무 공지", {
+      body: "알림 표시 테스트입니다. 이 팝업이 보이면 이 기기의 알림 설정은 정상입니다.",
+      icon: "./icon-192.png",
+      tag: "local-test",
+    });
+  } catch (e) { setPushMsg("테스트 알림을 표시하지 못했습니다."); }
+}
+
+// 앱을 열 때 하루에 한 번, 푸시 토큰이 바뀌었는지 확인해서 서버에 최신 상태로 맞춰 둠
+async function syncPushOnStart() {
+  try {
+    if (!PUSH_CONFIGURED || lsGet("pushEnabled") !== "1") return;
+    const name = lsGet("pushName");
+    if (!name || !pushSupported() || Notification.permission !== "granted" || !navigator.onLine) return;
+    if (Date.now() - Number(lsGet("pushLastSync") || 0) < 24 * 3600 * 1000) return;
+    const fb = await loadFb();
+    if (!(await fb.msg.isSupported())) return;
+    const reg = await navigator.serviceWorker.ready;
+    const token = await fb.msg.getToken(fb.msg.getMessaging(fb.app), { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
+    if (token) await saveTokenDoc(fb, name, token);
+  } catch (e) { /* 조용히 무시: 다음 실행 때 다시 시도 */ }
+}
+
+/* ---------- 공지 작성 / 목록 ---------- */
+let noticeFormBuilt = false;
+let noticeLoading = false;
+
+function initNoticeForm() {
+  if (!noticeFormBuilt) {
+    const box = document.getElementById("nfTargets");
+    ALL_NAMES.forEach((n) => {
+      const b = document.createElement("span");
+      b.className = "pick";
+      b.textContent = n;
+      b.dataset.name = n;
+      b.addEventListener("click", () => b.classList.toggle("on"));
+      box.appendChild(b);
+    });
+    noticeFormBuilt = true;
+  }
+  const dEl = document.getElementById("nfDate");
+  dEl.min = todayStr();
+  if (!dEl.value) dEl.value = todayStr();
+  document.getElementById("nfPinWrap").style.display = lsGet("isWriter") === "1" ? "none" : "";
+}
+
+function toggleNoticeForm() {
+  const form = document.getElementById("noticeForm");
+  const open = form.style.display === "none";
+  form.style.display = open ? "" : "none";
+  document.getElementById("noticeNewBtn").textContent = open ? "작성 닫기" : "＋ 새 공지 작성";
+  if (open) initNoticeForm();
+}
+
+function pickAllTargets(on) {
+  document.querySelectorAll("#nfTargets .pick").forEach((b) => b.classList.toggle("on", on));
+}
+
+function onNoticeTabOpen() {
+  initNoticeForm();
+  loadNotices();
+}
+
+async function submitNotice() {
+  const st = document.getElementById("nfStatus");
+  const btn = document.getElementById("nfSubmitBtn");
+  const date = document.getElementById("nfDate").value;
+  const time = document.getElementById("nfTime").value;
+  const targets = Array.from(document.querySelectorAll("#nfTargets .pick.on")).map((b) => b.dataset.name);
+  const title = document.getElementById("nfTitle").value.trim();
+  const message = document.getElementById("nfMessage").value.trim();
+  const pin = document.getElementById("nfPin").value;
+
+  if (!date || !time) { st.textContent = "날짜와 시각을 정해 주세요."; return; }
+  if (date < todayStr()) { st.textContent = "지난 날짜에는 공지를 올릴 수 없습니다."; return; }
+  if (!targets.length) { st.textContent = "알림 받을 근무자를 한 명 이상 선택해 주세요."; return; }
+  if (!message) { st.textContent = "공지 내용을 입력해 주세요."; return; }
+  if (!PUSH_CONFIGURED) { st.textContent = "알림 서버 설정이 아직 되어 있지 않습니다. (SETUP.md 참고)"; return; }
+
+  btn.disabled = true;
+  st.textContent = "올리는 중…";
+  try {
+    const fb = await loadFb();
+    const { doc, getDoc, setDoc, addDoc, collection, serverTimestamp } = fb.fs;
+
+    // 작성 권한: 이 기기에서 처음이면 비밀번호로 등록 (서버 보안 규칙이 검사)
+    if (lsGet("isWriter") !== "1") {
+      const wref = doc(fb.db, "writers", fb.auth.currentUser.uid);
+      let ok = false;
+      try { ok = (await getDoc(wref)).exists(); } catch (e) {}
+      if (!ok) {
+        if (!pin) { st.textContent = "작성 비밀번호를 입력해 주세요."; return; }
+        try {
+          await setDoc(wref, { pin });
+        } catch (e) {
+          if (e.code === "permission-denied") { st.textContent = "작성 비밀번호가 맞지 않습니다."; return; }
+          throw e;
+        }
+      }
+      lsSet("isWriter", "1");
+    }
+
+    await addDoc(collection(fb.db, "announcements"), {
+      date, time, targets, title, message,
+      author: lsGet("pushName") || "익명",
+      createdAt: serverTimestamp(),
+      status: "pending",
+    });
+    st.textContent = "공지를 올렸습니다. 지정한 시각에 알림이 발송됩니다.";
+    document.getElementById("nfTitle").value = "";
+    document.getElementById("nfMessage").value = "";
+    document.getElementById("nfPin").value = "";
+    document.getElementById("nfPinWrap").style.display = "none";
+    await loadNotices();
+  } catch (e) {
+    console.error(e);
+    if (e.code === "permission-denied" && lsGet("isWriter") === "1") {
+      lsDel("isWriter");
+      document.getElementById("nfPinWrap").style.display = "";
+      st.textContent = "작성 권한이 만료되었습니다. 비밀번호를 다시 입력하고 올려 주세요.";
+    } else {
+      st.textContent = "공지를 올리지 못했습니다. 인터넷 연결을 확인해 주세요. (" + (e.code || e.message || e) + ")";
+    }
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function loadNotices() {
+  const box = document.getElementById("noticeList");
+  if (!PUSH_CONFIGURED) {
+    box.innerHTML = '<div class="card"><div class="muted" style="margin:0;">알림 서버 설정이 아직 되어 있지 않습니다. (SETUP.md 참고)</div></div>';
+    return;
+  }
+  if (noticeLoading) return;
+  noticeLoading = true;
+  box.innerHTML = '<div class="muted" style="text-align:center;">불러오는 중…</div>';
+  try {
+    const fb = await loadFb();
+    const { collection, query, where, orderBy, getDocs } = fb.fs;
+    const snap = await getDocs(query(collection(fb.db, "announcements"), where("date", ">=", todayStr()), orderBy("date")));
+    const items = snap.docs.map((d) => Object.assign({ id: d.id }, d.data()));
+    items.sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+
+    if (!items.length) {
+      box.innerHTML = '<div class="card"><div class="muted" style="margin:0;text-align:center;">오늘 이후 예정된 공지가 없습니다.</div></div>';
+      return;
+    }
+    const myName = lsGet("pushName") || "";
+    const isWriter = lsGet("isWriter") === "1";
+    box.innerHTML = items.map((a) => {
+      const [y, m, d] = String(a.date).split("-").map(Number);
+      const wd = WEEKDAY_KR[new Date(y, m - 1, d).getDay()];
+      const targets = Array.isArray(a.targets) ? a.targets : [];
+      const mine = myName && targets.includes(myName);
+      const statusTag = a.status === "sent"
+        ? `<span class="tag sent">발송됨${typeof a.sentCount === "number" ? " · " + a.sentCount + "기기" : ""}</span>`
+        : a.status === "expired" ? '<span class="tag off">만료</span>' : '<span class="tag">예약됨</span>';
+      const missing = Array.isArray(a.missing) && a.missing.length
+        ? `<div class="notice-meta">알림 미설정: ${esc(a.missing.join(", "))}</div>` : "";
+      return `<div class="card notice-card${mine ? " mine" : ""}">
+        <div class="notice-head">
+          <span class="notice-when">${m}/${d} (${wd}) ${esc(a.time)}</span>
+          ${statusTag}${mine ? '<span class="tag">내 공지</span>' : ""}
+          ${isWriter ? `<button class="notice-del" data-id="${esc(a.id)}">삭제</button>` : ""}
+        </div>
+        ${a.title ? `<div class="notice-title">${esc(a.title)}</div>` : ""}
+        <div class="notice-msg">${esc(a.message)}</div>
+        <div class="notice-targets">${targets.map((n) => `<span>${esc(n)}</span>`).join("")}</div>
+        ${missing}
+        <div class="notice-meta">작성: ${esc(a.author || "")}</div>
+      </div>`;
+    }).join("");
+  } catch (e) {
+    console.error(e);
+    box.innerHTML = '<div class="card"><div class="muted" style="margin:0;text-align:center;">공지를 불러오지 못했습니다. 인터넷 연결을 확인하고 새로고침해 주세요.</div></div>';
+  } finally {
+    noticeLoading = false;
+  }
+}
+
+document.getElementById("noticeList").addEventListener("click", async (e) => {
+  const btn = e.target.closest(".notice-del");
+  if (!btn) return;
+  if (!confirm("이 공지를 삭제할까요? (아직 발송 전이면 알림도 나가지 않습니다)")) return;
+  try {
+    const fb = await loadFb();
+    await fb.fs.deleteDoc(fb.fs.doc(fb.db, "announcements", btn.dataset.id));
+    loadNotices();
+  } catch (err) {
+    console.error(err);
+    alert("삭제하지 못했습니다. 작성 권한과 인터넷 연결을 확인해 주세요.");
+  }
+});
+
+/* ---------- 알림을 눌러서 앱이 열렸을 때 공지 탭으로 이동 ---------- */
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.addEventListener("message", (e) => {
+    if (e.data && e.data.type === "open-notice") switchTab("tab-notice");
+  });
+}
+function handleNoticeHash() {
+  if (location.hash === "#notice") {
+    switchTab("tab-notice");
+    try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+  }
+}
+window.addEventListener("hashchange", handleNoticeHash);
+
+// 초기화
+(function initPush() {
+  const sel = document.getElementById("pushNameSelect");
+  ALL_NAMES.forEach((n) => {
+    const o = document.createElement("option");
+    o.value = n;
+    o.textContent = n;
+    sel.appendChild(o);
+  });
+  let def = lsGet("pushName");
+  if (!def) {
+    const fav = getFavoritePerson().split(":");
+    def = GROUP_NAMES[fav[0]] && GROUP_NAMES[fav[0]][Number(fav[1])];
+  }
+  if (def) sel.value = def;
+  sel.addEventListener("change", refreshPushStatus);
+  refreshPushStatus();
+  handleNoticeHash();
+  syncPushOnStart();
+})();
+</script>
+</body>
+</html>
