@@ -1,0 +1,12 @@
+{
+  "name": "gunmupyo-notify",
+  "version": "1.0.0",
+  "private": true,
+  "description": "기술국 근무표 공지 알림 발송 스크립트",
+  "scripts": {
+    "start": "node send.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.5.0"
+  }
+}
