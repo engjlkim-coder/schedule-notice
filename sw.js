@@ -6,7 +6,7 @@
 // (v1 -> v2). 그러면 각 폰이 다음에 인터넷에 연결된 상태로 열 때 새 버전을
 // 통째로 다시 받아 저장합니다.
 
-const CACHE_NAME = 'gunmupyo-cache-v2';
+const CACHE_NAME = 'gunmupyo-cache-v3';
 
 const ASSETS_TO_CACHE = [
   './',
